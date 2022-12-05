@@ -393,7 +393,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 //if (complexLit)
                 //    result.passes.Add(LitPasses.ForwardOnly(target, workflowMode, complexLit, blendModePreserveSpecular, CoreBlockMasks.Vertex, LitBlockMasks.FragmentComplexLit, CorePragmas.DOTSForward));
                 //else
-#if UNITY 2022_2_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
                 result.passes.Add(SimpleLitPasses.Forward(target, /*workflowMode,*/ blendModePreserveSpecular, specularHighlights, CorePragmas.ForwardSM45, SimpleLitKeywords.DOTSForward));
 #elif UNITY_2022_1
                 result.passes.Add(SimpleLitPasses.Forward(target, /*workflowMode,*/ blendModePreserveSpecular, specularHighlights, CorePragmas.DOTSForward));
