@@ -20,7 +20,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
         // Should be in UniversalTarget
         public const string kSimpleLitMaterialTypeTag = "\"UniversalMaterialType\" = \"SimpleLit\"";
 
-$if UNITY_2022_2_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
         public override int latestVersion => 2;
 #elif UNITY_2022_1
         public override int latestVersion => 1;

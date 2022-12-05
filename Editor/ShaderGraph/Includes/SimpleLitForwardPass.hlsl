@@ -24,7 +24,7 @@ void InitializeInputData(Varyings input, SurfaceDescription surfaceDescription, 
     inputData.normalWS = NormalizeNormalPerPixel(inputData.normalWS);
 #if UNITY_VERSION >= 202220
     inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
-@else
+#else
     inputData.viewDirectionWS = SafeNormalize(GetWorldSpaceViewDir(input.positionWS));
 #endif
 
