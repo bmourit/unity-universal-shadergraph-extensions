@@ -22,7 +22,11 @@ void InitializeInputData(Varyings input, SurfaceDescription surfaceDescription, 
         inputData.normalWS = input.normalWS;
     #endif
     inputData.normalWS = NormalizeNormalPerPixel(inputData.normalWS);
+#if UNITY_VERSION >= 202220
+    inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
+@else
     inputData.viewDirectionWS = SafeNormalize(GetWorldSpaceViewDir(input.positionWS));
+#endif
 
     #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
         inputData.shadowCoord = input.shadowCoord;
@@ -63,13 +67,42 @@ PackedVaryings vert(Attributes input)
     return packedOutput;
 }
 
+#if UNITY_VERSION >= 202220
+void frag(
+    PackedVaryings packedInput
+    , out half4 outColor : SV_Target0
+#ifdef _WRITE_RENDERING_LAYERS
+    , out float4 outRenderingLayers : SV_Target1
+#endif
+)
+#else
 half4 frag(PackedVaryings packedInput) : SV_TARGET
+#endif //UNITY_VERSION 202220
 {
     Varyings unpacked = UnpackVaryings(packedInput);
     UNITY_SETUP_INSTANCE_ID(unpacked);
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(unpacked);
     SurfaceDescription surfaceDescription = BuildSurfaceDescription(unpacked);
 
+#if UNITY_VERSION >= 202220
+#if defined(_SURFACE_TYPE_TRANSPARENT)
+    bool isTransparent = true;
+#else
+    bool isTransparent = false;
+#endif
+
+#if defined(_ALPHATEST_ON)
+    half alpha = AlphaDiscard(surfaceDescription.Alpha, surfaceDescription.AlphaClipThreshold);
+#elif defined(_SURFACE_TYPE_TRANSPARENT)
+    half alpha = surfaceDescription.Alpha;
+#else
+    half alpha = half(1.0);
+#endif
+
+    #if defined(LOD_FADE_CROSSFADE) && USE_UNITY_CROSSFADE
+        LODFadeCrossFade(unpacked.positionCS);
+    #endif
+#else
     #if _ALPHATEST_ON
         half alpha = surfaceDescription.Alpha;
         clip(alpha - surfaceDescription.AlphaClipThreshold);
@@ -78,7 +111,7 @@ half4 frag(PackedVaryings packedInput) : SV_TARGET
     #else
         half alpha = 1;
     #endif
-
+#endif //UNITY_VERSION 202220
     InputData inputData;
     InitializeInputData(unpacked, surfaceDescription, inputData);
     // TODO: Mip debug modes would require this, open question how to do this on ShaderGraph.
@@ -127,5 +160,18 @@ half4 frag(PackedVaryings packedInput) : SV_TARGET
     half4 color = UniversalFragmentBlinnPhong(inputData, surface);
 
     color.rgb = MixFog(color.rgb, inputData.fogCoord);
+
+#if UNITY_VERSION >= 202220
+    color.a = OutputAlpha(color.a, isTransparent);
+
+    outColor = color;
+
+#ifdef _WRITE_RENDERING_LAYERS
+    uint renderingLayers = GetMeshRenderingLayer();
+    outRenderingLayers = float4(EncodeMeshRenderingLayer(renderingLayers), 0, 0, 0);
+#endif
+
+#else
     return color;
+#endif //UNITY_VERSION 202220
 }
